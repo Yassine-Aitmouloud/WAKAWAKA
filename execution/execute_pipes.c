@@ -1,87 +1,64 @@
-# include "../includes/minishell.h"
-# include "../includes/libft.h"
-# include "../includes/tokenizer.h"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   execute_pipes.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: yaaitmou <yaaitmou@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 14:39:00 by yaaitmou          #+#    #+#             */
+/*   Updated: 2025/05/19 22:03:51 by yaaitmou         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-int count_pipe_line(t_execution *list)
+#include "../includes/libft.h"
+#include "../includes/minishell.h"
+#include "../includes/tokenizer.h"
+
+void	execute_pipeline(int pipes[2][2], t_execution *list, t_hr helper,int size)
 {
-    int count;
-    count = 0;
-    while(list && list->args)
-    {
-        count++;
-        list = list->next;
-    }
-    return (count);
+	setup_pipes(pipes, helper.i, size,list);
+	execute_Cmd(list, helper, size);
+	exit(1);
 }
 
-// void execute_pipes(char **path, t_execution *list,int size)
-// {
-//     int i = 0;
-//     int pipes[2][2];
-//     pid_t *pid = malloc(sizeof(pid_t) * size);
-//     while(i < size)
-//     {
-//         if (list->args[i] == NULL && list->file != NULL)
-//         {
-//             int stdout_copy = dup(STDOUT_FILENO);
-//             int stdin_copy = dup(STDIN_FILENO);
-//             ft_redirection(list->file);  
-//             dup2(stdout_copy,1);
-//             dup2(stdin_copy,0);      
-//             list = list->next;
-//             i++;
-//         }
-//         else if (size == 1 && if_builtin(list->args[0]) != 0)
-//         {
-//             int stdout_copy = dup(1);
-//             int stdin_copy = dup(0);
-//             if (list->file)
-//             {
-//                 if (ft_redirection(list->file) == 0)
-//                 {
-//                     is_builtin(list->args[0], list,size);
-//                     dup2(stdout_copy,1);
-//                     dup2(stdin_copy,0);
-//                 }
-//             }
-//             else
-//             {
-//                 is_builtin(list->args[0], list,size);
-//                 dup2(stdout_copy,1);
-//                 dup2(stdin_copy,0);
-//             }
-//             break;
-//         }
-//         else
-//         {       
-//             if (i < size - 1)
-//                 pipe(pipes[i % 2]);
-//             pid[i] = fork();
-//             if (pid[i] == 0)
-//             {
-//                 if (i > 0)
-//                 dup2(pipes[(i + 1) % 2][0], 0);
-//                 if (i < size - 1)
-//                 {
-//                     dup2(pipes[i % 2][1], 1);
-//                     close(pipes[i % 2][0]);
-//                 }
-//                 execute_simple_cmnd(path,list,size);
-//             }
-//             if (i > 0)
-//                 close(pipes[(i + 1) % 2][0]);
-//             if (i < size - 1)
-//                 close(pipes[i % 2][1]);
-//             i++;
-//             list = list->next;
-//         }
-//     }
-//     i = 0;
-//     while(i < size)
-//     {
-//         waitpid(pid[i], &g_status()->status, 0);
-//         // printf("%d\n",g_status()->status >> 8);
-//         i++;
-//     }
-//     free(pid);
-// }
+void	setup_pipes(int pipes[2][2], int i, int size,t_execution *list)
+{
+	if (i > 0 && list->file->infile == 0)
+		dup2(pipes[(i + 1) % 2][0], STDIN_FILENO);
+	close_previous(pipes, i);
+	if (i < size - 1)
+		dup2(pipes[i % 2][1], STDOUT_FILENO);
+	if (i < size - 1)
+	{
+		close(pipes[i % 2][0]);
+		close(pipes[i % 2][1]);
+	}
+}
+void	cleanup(pid_t *pid, t_hr hr)
+{
+	wait_all(pid, hr);
+	free(pid);
+}
+void	wait_all(pid_t *pids, t_hr hr)
+{
+	int	j;
+	int	status;
+
+	j = 0;
+	while (j < hr.i)
+	{
+		waitpid(pids[j], &status, 0);
+		g_status()->status = WEXITSTATUS(status);
+		if (WIFSIGNALED(status))
+			g_status()->status = WTERMSIG(status) + 2;
+		j++;
+	}
+}
+void	close_previous(int pipes[2][2], int i)
+{
+	if (i > 0)
+	{
+		close(pipes[(i + 1) % 2][1]);
+		close(pipes[(i + 1) % 2][0]);
+	}
+}

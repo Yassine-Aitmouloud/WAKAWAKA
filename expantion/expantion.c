@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   expantion.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: souel-bo <souel-bo@student.42.fr>          +#+  +:+       +#+        */
+/*   By: yaaitmou <yaaitmou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/27 19:00:24 by souel-bo          #+#    #+#             */
-/*   Updated: 2025/05/09 13:06:21 by souel-bo         ###   ########.fr       */
+/*   Updated: 2025/05/16 21:39:00 by yaaitmou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,7 +112,7 @@ char	*expand_env(char *key)
 {
 	t_envp	*iterate;
 
-	iterate = new_envp;
+	iterate = g_new_envp;
 	while (iterate)
 	{
 		if (ft_strlen(key) == ft_strlen(iterate->key) && ft_strncmp(key,
@@ -146,16 +146,18 @@ t_token	*expand_value(t_token *token)
 	t_token	*iterate;
 	char	*s;
 	char	*temp;
+	char *l;
+	int i, j, k, n;
 
-	int i, j, k;
 	iterate = token;
 	while (iterate)
 	{
-		if (find_dollar(iterate->token))
+		if (find_dollar(iterate->token) && iterate->type != DELIMITER)
 		{
+			iterate->expanded = 1;
 			i = 0;
 			j = 0;
-			temp = malloc(4096);
+			temp = malloc(ALLOC);
 			if (!temp)
 				return (NULL);
 			while (iterate->token[i])
@@ -188,7 +190,12 @@ t_token	*expand_value(t_token *token)
 								k = 0;
 								if (iterate->token[i] == '?')
 								{
-									temp[j++] = iterate->token[i++];
+									i++;
+									l = ft_itoa(g_status()->status);
+									n = 0;
+									while (l[n])
+										temp[j++] = l[n++];
+									free(l);
 								}
 								else
 								{
@@ -247,7 +254,12 @@ t_token	*expand_value(t_token *token)
 							k = 0;
 							if (iterate->token[i] == '?')
 							{
-								temp[j++] = iterate->token[i++];
+								i++;
+								l = ft_itoa(g_status()->status);
+								n = 0;
+								while (l[n])
+									temp[j++] = l[n++];
+								free(l);
 							}
 							else
 							{
@@ -280,11 +292,60 @@ t_token	*expand_value(t_token *token)
 	return (token);
 }
 
+int check_quote(char *delimiter)
+{
+	int i = 0;
+	while (delimiter[i])
+	{
+		if (delimiter[i] == '"' || delimiter[i] == '\'')
+			return 1;
+		else
+			i++;
+	}
+	return 0;
+}
+
+
+t_token *join_token(t_token *token)
+{
+	t_token *iterate;
+	t_token *next;
+	t_token *new = NULL ;
+	t_token *list = NULL;
+
+	iterate = token;
+	while (iterate)
+	{
+		if (iterate->expanded && (iterate->token[0] == '\0'))
+		{
+			next = iterate->next;
+			ft_lstdelone(iterate, free);
+			iterate = next;
+			continue;
+		}
+		new = new_element(iterate->token);
+		new->type = iterate->type;
+		if (new->type == DELIMITER)
+		{
+			if (check_quote(new->token))
+				new->heredoc = 1;
+			else
+				new->heredoc = 0;
+		}
+		ft_lstadd_back(&list, new);
+		next = iterate->next;
+		free(iterate);
+		iterate = next;
+	}
+	return (list);
+}
+
+
 t_token	*expantion(t_token *token)
 {
-	// (void)env;
 	token = expand_value(token);
 	token = expand_wildcard(token);
+	token = join_token(token);
 	token = handle_quote(token);
 	return (token);
 }

@@ -11,9 +11,9 @@
 /* ************************************************************************** */
 
 #ifndef EXPANTION_H
-#define EXPANTION_H
+# define EXPANTION_H
 
-#include "minishell.h"
+# include "minishell.h"
 
-t_token *expantion(t_token *tokens);
+t_token	*expantion(t_token *tokens);
 #endif

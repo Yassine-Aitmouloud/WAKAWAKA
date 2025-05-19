@@ -1,27 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_lstnew.c                                        :+:      :+:    :+:   */
+/*   here_doc.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: souel-bo <souel-bo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/28 01:26:48 by souel-bo          #+#    #+#             */
-/*   Updated: 2025/05/16 03:08:36 by souel-bo         ###   ########.fr       */
+/*   Created: 2025/05/19 12:20:48 by souel-bo          #+#    #+#             */
+/*   Updated: 2025/05/19 12:38:07 by souel-bo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/libft.h"
+# ifndef HERE_DOC_H
+# define HERE_DOC_H
 
-t_token	*new_element(char *ptr)
-{
-	t_token *new;
-	new = malloc(sizeof(t_token));
-	if (!new)
-		return (NULL);
-	new->token = ptr;
-	new->expanded = 0;
-	new->index = 0;
-	new->heredoc = 0;
-	new->next = NULL;
-	return (new);
-}
+#include "minishell.h"
+#define HERE_DOC_FILE "/tmp/.here_doc"
+t_token *handle_heredoc(t_token *tokens);
+
+#endif
